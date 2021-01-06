@@ -8,6 +8,7 @@ contract ETFToken is ERC20 {
     uint256[] public quantities;
 
     event Create(uint256 amount);
+    event Redeem(uint256 amount);
 
     constructor(
         string memory name_,
@@ -42,7 +43,16 @@ contract ETFToken is ERC20 {
     }
 
     function redeem(uint256 amount) external {
-        // ...
-    }
+        // Burn ETF tokens
+        _burn(msg.sender, amount);
 
+        // Send ETF Tokens to this Contract
+        for (uint256 i = 0; i < tokens.length; i++) {
+            // Note: we must use 'transfer' function here and not 'transferFrom'
+            bool result = ERC20(tokens[i]).transfer(msg.sender, quantities[i] * amount);
+            require(result, 'transfer back failed');
+        }
+
+        emit Redeem(amount);
+    }
 }

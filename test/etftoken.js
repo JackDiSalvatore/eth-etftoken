@@ -63,7 +63,6 @@ contract('ETFToken', async ([deployer, alice, bob]) => {
     })
   })
 
-
   describe('Deployment', async () => {
     it('Mock UNI Token is successfully loaded', async () => {
       assert('Mock UniSwap Token' === await UNI.name(), 'Token name incorrect')
@@ -121,7 +120,9 @@ contract('ETFToken', async ([deployer, alice, bob]) => {
         amount: amount
       })
 
-      assert(tokens(2).eq(await ETF.balanceOf(alice)), 'alices ETF balance did not increase')
+      assert(tokens(2).eq(await ETF.balanceOf(alice)),
+        'alices ETF balance did not increase ' +
+        (await ETF.balanceOf(alice)).toString())
     })
 
     it('Alice does not have enough tokens to create 3 ETF Tokens', async () => {
@@ -135,14 +136,36 @@ contract('ETFToken', async ([deployer, alice, bob]) => {
 
   describe('Redeem', async () => {
     beforeEach('Alice creates 2 ETF Tokens', async () => {
-      await ETF.create(tokens(2), {from: alice})
+      const result = await ETF.create(tokens(2), {from: alice})
+      expectEvent(result, 'Create', {
+        amount: tokens(2)
+      })
     })
 
     it('Alice redeems 2 ETF Tokens', async () => {
-      const receipt = await ETF.redeem(2, {from: alice})
+      ETFbalance = await ETF.balanceOf(alice)
+      UNIbalance = await UNI.balanceOf(alice)
+      SNXbalance = await SNX.balanceOf(alice)
+      MKRbalance = await MKR.balanceOf(alice)
+
+      const receipt = await ETF.redeem(tokens(2), {from: alice})
       expectEvent(receipt, 'Redeem', {
         amount: tokens(2)
       })
+
+      assert(UNIbalance.add(tokens(2)).eq(await UNI.balanceOf(alice)),
+            'alices UNI tokens not redeemed')
+      assert(SNXbalance.add(tokens(8)).eq(await SNX.balanceOf(alice)),
+            'alices SNX tokens not redeemed')
+      assert(MKRbalance.add(tokens(4)).eq(await MKR.balanceOf(alice)),
+            'alices MKR tokens not redeemed')
+    })
+
+    it('Alice cannot redeem more tokens then in her ETF', async () => {
+      expectRevert(
+        ETF.redeem(tokens(3), {from: alice}),
+        'burn amount exceeds balance'
+      )
     })
   })
 
