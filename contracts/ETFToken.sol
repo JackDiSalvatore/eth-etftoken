@@ -2,8 +2,11 @@
 pragma solidity >=0.4.22 <0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract ETFToken is ERC20 {
+    using SafeMath for uint256;
+
     address[] public tokens;
     uint256[] public quantities;
 
@@ -33,7 +36,7 @@ contract ETFToken is ERC20 {
     function create(uint256 amount) external {
         // Send Tokens to this Contract
         for (uint256 i = 0; i < tokens.length; i++) {
-            bool result = ERC20(tokens[i]).transferFrom(msg.sender, address(this), quantities[i] * amount);
+            bool result = ERC20(tokens[i]).transferFrom(msg.sender, address(this), quantities[i].mul(amount));
             require(result, 'transfer failed');
         }
 
@@ -49,7 +52,7 @@ contract ETFToken is ERC20 {
         // Send ETF Tokens to this Contract
         for (uint256 i = 0; i < tokens.length; i++) {
             // Note: we must use 'transfer' function here and not 'transferFrom'
-            bool result = ERC20(tokens[i]).transfer(msg.sender, quantities[i] * amount);
+            bool result = ERC20(tokens[i]).transfer(msg.sender, quantities[i].mul(amount));
             require(result, 'transfer back failed');
         }
 
